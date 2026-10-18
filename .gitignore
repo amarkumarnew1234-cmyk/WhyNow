@@ -1,0 +1,23 @@
+# Compiled binaries
+whynow
+*.exe
+*.out
+
+# Object files
+*.o
+
+# Runtime data
+data/*
+!data/.gitkeep
+
+# Application logs
+logs/*
+!logs/.gitkeep
+
+# Editor files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
