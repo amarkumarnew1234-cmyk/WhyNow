@@ -1,4 +1,5 @@
 #include <string.h>
+#include <time.h>
 
 #include "activity.h"
 
@@ -94,6 +95,88 @@ int add_activity_to_session(
         case CLASS_NO_PURPOSE:
             break;
     }
+
+    return 1;
+}
+
+int start_activity(Activity *activity)
+{
+    if (activity == NULL) {
+        return 0;
+    }
+
+    activity->start_time = time(NULL);
+
+    if (activity->start_time == (time_t)-1) {
+        return 0;
+    }
+
+    activity->end_time = 0;
+    activity->duration_seconds = 0;
+
+    return 1;
+}
+
+int end_activity(Activity *activity)
+{
+    if (activity == NULL) {
+        return 0;
+    }
+
+    if (activity->start_time == 0) {
+        return 0;
+    }
+
+    activity->end_time = time(NULL);
+
+    if (activity->end_time == (time_t)-1) {
+        return 0;
+    }
+
+    activity->duration_seconds =
+        (long)difftime(
+            activity->end_time,
+            activity->start_time
+        );
+
+    return 1;
+}
+
+int set_activity_context(
+    Activity *activity,
+    const char *context
+)
+{
+    if (activity == NULL || context == NULL) {
+        return 0;
+    }
+
+    strncpy(
+        activity->context,
+        context,
+        MAX_CONTEXT_LENGTH - 1
+    );
+
+    activity->context[MAX_CONTEXT_LENGTH - 1] = '\0';
+
+    return 1;
+}
+
+int set_distraction_reason(
+    Activity *activity,
+    DistractionReason reason
+)
+{
+    if (activity == NULL) {
+        return 0;
+    }
+
+    if (reason < REASON_NONE ||
+        reason > REASON_OTHER) {
+        return 0;
+    }
+
+    activity->distraction_reason = reason;
 
     return 1;
 }
