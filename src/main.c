@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "session.h"
+#include "activity.h"
 
 static void clear_input_buffer(void)
 {
@@ -29,7 +30,11 @@ static int read_integer(const char *prompt)
     }
 }
 
-static void read_line(const char *prompt, char *buffer, size_t size)
+static void read_line(
+    const char *prompt,
+    char *buffer,
+    size_t size
+)
 {
     printf("%s", prompt);
 
@@ -43,16 +48,22 @@ static const char *intent_to_string(IntentType intent)
     switch (intent) {
         case INTENT_STUDY:
             return "Study";
+
         case INTENT_WORK:
             return "Work";
+
         case INTENT_COMMUNICATION:
             return "Communication";
+
         case INTENT_ENTERTAINMENT:
             return "Entertainment";
+
         case INTENT_PERSONAL:
             return "Personal Task";
+
         case INTENT_NO_PURPOSE:
             return "No Specific Purpose";
+
         default:
             return "Unknown";
     }
@@ -63,12 +74,16 @@ static const char *device_to_string(DeviceType device)
     switch (device) {
         case DEVICE_PHONE:
             return "Phone";
+
         case DEVICE_LAPTOP:
             return "Laptop";
+
         case DEVICE_TABLET:
             return "Tablet";
+
         case DEVICE_OTHER:
             return "Other";
+
         default:
             return "Unknown";
     }
@@ -120,6 +135,57 @@ static DeviceType select_device(void)
     }
 }
 
+static ActivityType select_activity_type(void)
+{
+    int choice;
+
+    while (1) {
+        printf("\nSelect activity category:\n");
+        printf("1. Study\n");
+        printf("2. Work\n");
+        printf("3. Communication\n");
+        printf("4. Entertainment\n");
+        printf("5. Personal Task\n");
+        printf("6. Other\n");
+
+        choice = read_integer("Enter choice: ");
+
+        if (choice >= ACTIVITY_STUDY &&
+            choice <= ACTIVITY_OTHER) {
+            return (ActivityType)choice;
+        }
+
+        printf(
+            "Invalid activity category. "
+            "Please select 1-6.\n"
+        );
+    }
+}
+
+static DistractionReason select_distraction_reason(void)
+{
+    int choice;
+
+    while (1) {
+        printf("\nWhy did this drift happen?\n");
+        printf("1. Notification\n");
+        printf("2. Boredom\n");
+        printf("3. Habit\n");
+        printf("4. Curiosity\n");
+        printf("5. New Task\n");
+        printf("6. Planned Break\n");
+        printf("7. Other\n");
+
+        choice = read_integer("Enter choice: ");
+
+        if (choice >= 1 && choice <= 7) {
+            return (DistractionReason)choice;
+        }
+
+        printf("Invalid reason. Please select 1-7.\n");
+    }
+}
+
 static void display_active_session(const Session *session)
 {
     if (!session->is_active) {
@@ -128,114 +194,454 @@ static void display_active_session(const Session *session)
     }
 
     printf("\n========== ACTIVE SESSION ==========\n");
-    printf("Session ID       : %d\n", session->session_id);
-    printf("Original Intent  : %s\n",
-           intent_to_string(session->original_intent));
-    printf("Current Intent   : %s\n",
-           intent_to_string(session->current_intent));
-    printf("Device           : %s\n",
-           device_to_string(session->device_type));
+
+    printf(
+        "Session ID       : %d\n",
+        session->session_id
+    );
+
+    printf(
+        "Original Intent  : %s\n",
+        intent_to_string(session->original_intent)
+    );
+
+    printf(
+        "Current Intent   : %s\n",
+        intent_to_string(session->current_intent)
+    );
+
+    printf(
+        "Device           : %s\n",
+        device_to_string(session->device_type)
+    );
 
     if (session->original_intent != INTENT_NO_PURPOSE) {
-        printf("Goal             : %s\n", session->goal);
+        printf(
+            "Goal             : %s\n",
+            session->goal
+        );
     } else {
         printf("Goal             : N/A\n");
     }
 
     if (session->expected_duration_minutes > 0) {
-        printf("Expected Duration: %d minutes\n",
-               session->expected_duration_minutes);
+        printf(
+            "Expected Duration: %d minutes\n",
+            session->expected_duration_minutes
+        );
     } else {
-        printf("Expected Duration: Not specified\n");
+        printf(
+            "Expected Duration: Not specified\n"
+        );
     }
 
-    printf("Activities       : %d\n", session->activity_count);
+    printf(
+        "Activities       : %d\n",
+        session->activity_count
+    );
+
+    printf(
+        "Aligned          : %d\n",
+        session->aligned_count
+    );
+
+    printf(
+        "Contextual       : %d\n",
+        session->contextual_count
+    );
+
+    printf(
+        "Intent Changes   : %d\n",
+        session->intent_change_count
+    );
+
+    printf(
+        "Drifts           : %d\n",
+        session->drift_count
+    );
+
     printf("====================================\n");
 }
 
-static void create_new_session(Session *session, int session_id)
+static void create_new_session(
+    Session *session,
+    int session_id
+)
 {
     int expected_minutes;
 
     if (session->is_active) {
-        printf("\nA session is already active. "
-               "End it before starting another session.\n");
+        printf(
+            "\nA session is already active. "
+            "End it before starting another session.\n"
+        );
         return;
     }
 
     initialize_session(session, session_id);
 
     session->original_intent = select_intention();
-    session->current_intent = session->original_intent;
+    session->current_intent =
+        session->original_intent;
 
     session->device_type = select_device();
 
-    if (session->original_intent != INTENT_NO_PURPOSE) {
-        read_line("Enter your specific goal: ",
-                  session->goal,
-                  sizeof(session->goal));
+    if (session->original_intent !=
+        INTENT_NO_PURPOSE) {
+        read_line(
+            "Enter your specific goal: ",
+            session->goal,
+            sizeof(session->goal)
+        );
     }
 
     while (1) {
         expected_minutes =
-            read_integer("Expected duration in minutes "
-                         "(0 if not specified): ");
+            read_integer(
+                "Expected duration in minutes "
+                "(0 if not specified): "
+            );
 
         if (expected_minutes >= 0) {
             break;
         }
 
-        printf("Duration cannot be negative.\n");
+        printf(
+            "Duration cannot be negative.\n"
+        );
     }
 
-    session->expected_duration_minutes = expected_minutes;
+    session->expected_duration_minutes =
+        expected_minutes;
 
     if (start_session(session)) {
-        printf("\nSession %d started successfully.\n",
-               session->session_id);
+        printf(
+            "\nSession %d started successfully.\n",
+            session->session_id
+        );
+
         display_active_session(session);
     } else {
         printf("\nUnable to start session.\n");
     }
 }
 
-static void finish_current_session(Session *session)
+static void record_activity(Session *session)
+{
+    Activity activity;
+    int relationship_choice = 0;
+
+    if (!session->is_active) {
+        printf(
+            "\nStart a session before "
+            "recording an activity.\n"
+        );
+        return;
+    }
+
+    if (session->activity_count >= MAX_ACTIVITIES) {
+        printf(
+            "\nMaximum activity limit reached "
+            "for this session.\n"
+        );
+        return;
+    }
+
+    initialize_activity(
+        &activity,
+        session->activity_count + 1
+    );
+
+    printf(
+        "\n========== RECORD ACTIVITY ==========\n"
+    );
+
+    read_line(
+        "Activity name: ",
+        activity.name,
+        sizeof(activity.name)
+    );
+
+    activity.category = select_activity_type();
+
+    if (!start_activity(&activity)) {
+        printf(
+            "\nUnable to start activity tracking.\n"
+        );
+        return;
+    }
+
+    if (session->original_intent ==
+        INTENT_NO_PURPOSE) {
+
+        activity.classification =
+            CLASS_NO_PURPOSE;
+
+    } else if (
+        (int)activity.category ==
+        (int)session->current_intent
+    ) {
+
+        activity.classification =
+            CLASS_ALIGNED;
+
+    } else {
+
+        printf(
+            "\nThis activity differs from "
+            "your current intent: %s\n",
+            intent_to_string(
+                session->current_intent
+            )
+        );
+
+        printf(
+            "\nHow is this activity related "
+            "to your intention?\n"
+        );
+
+        printf(
+            "1. Related/contextual activity\n"
+        );
+
+        printf(
+            "2. Intentional change of intention\n"
+        );
+
+        printf(
+            "3. Unrelated drift/distraction\n"
+        );
+
+        while (
+            relationship_choice < 1 ||
+            relationship_choice > 3
+        ) {
+            relationship_choice =
+                read_integer("Enter choice: ");
+
+            if (
+                relationship_choice < 1 ||
+                relationship_choice > 3
+            ) {
+                printf(
+                    "Invalid choice. "
+                    "Please select 1-3.\n"
+                );
+            }
+        }
+
+        activity.classification =
+            classify_activity(
+                session,
+                activity.category,
+                relationship_choice
+            );
+    }
+
+    if (
+        activity.classification ==
+        CLASS_DRIFT
+    ) {
+        set_distraction_reason(
+            &activity,
+            select_distraction_reason()
+        );
+    }
+
+    read_line(
+        "Context / short note (optional): ",
+        activity.context,
+        sizeof(activity.context)
+    );
+
+    if (!end_activity(&activity)) {
+        printf(
+            "\nUnable to finish "
+            "activity tracking.\n"
+        );
+        return;
+    }
+
+    if (!add_activity_to_session(
+            session,
+            &activity
+        )) {
+        printf(
+            "\nUnable to add activity "
+            "to the session.\n"
+        );
+        return;
+    }
+
+    printf(
+        "\n========== ACTIVITY RECORDED ==========\n"
+    );
+
+    printf(
+        "Activity        : %s\n",
+        activity.name
+    );
+
+    printf(
+        "Category        : %s\n",
+        activity_type_to_string(
+            activity.category
+        )
+    );
+
+    printf(
+        "Classification  : %s\n",
+        classification_to_string(
+            activity.classification
+        )
+    );
+
+    printf(
+        "Duration        : %ld seconds\n",
+        activity.duration_seconds
+    );
+
+    if (
+        activity.classification ==
+        CLASS_DRIFT
+    ) {
+        printf(
+            "Drift Reason    : %s\n",
+            distraction_reason_to_string(
+                activity.distraction_reason
+            )
+        );
+    }
+
+    if (activity.context[0] != '\0') {
+        printf(
+            "Context         : %s\n",
+            activity.context
+        );
+    }
+
+    printf(
+        "Total Activities : %d\n",
+        session->activity_count
+    );
+
+    printf(
+        "=======================================\n"
+    );
+}
+
+static void finish_current_session(
+    Session *session
+)
 {
     if (!session->is_active) {
-        printf("\nNo active session to end.\n");
+        printf(
+            "\nNo active session to end.\n"
+        );
         return;
     }
 
     if (!end_session(session)) {
-        printf("\nUnable to end session.\n");
+        printf(
+            "\nUnable to end session.\n"
+        );
         return;
     }
 
-    printf("\n========== SESSION ENDED ==========\n");
-    printf("Session ID      : %d\n", session->session_id);
-    printf("Intent          : %s\n",
-           intent_to_string(session->original_intent));
-    printf("Device          : %s\n",
-           device_to_string(session->device_type));
-    printf("Duration        : %ld seconds\n",
-           session->actual_duration_seconds);
+    printf(
+        "\n========== SESSION ENDED ==========\n"
+    );
+
+    printf(
+        "Session ID       : %d\n",
+        session->session_id
+    );
+
+    printf(
+        "Intent           : %s\n",
+        intent_to_string(
+            session->original_intent
+        )
+    );
+
+    printf(
+        "Final Intent     : %s\n",
+        intent_to_string(
+            session->current_intent
+        )
+    );
+
+    printf(
+        "Device           : %s\n",
+        device_to_string(
+            session->device_type
+        )
+    );
+
+    printf(
+        "Duration         : %ld seconds\n",
+        session->actual_duration_seconds
+    );
+
+    printf(
+        "Activities       : %d\n",
+        session->activity_count
+    );
+
+    printf(
+        "Aligned          : %d\n",
+        session->aligned_count
+    );
+
+    printf(
+        "Contextual       : %d\n",
+        session->contextual_count
+    );
+
+    printf(
+        "Intent Changes   : %d\n",
+        session->intent_change_count
+    );
+
+    printf(
+        "Drifts           : %d\n",
+        session->drift_count
+    );
 
     if (session->alignment_percentage < 0.0) {
-        printf("Intent Alignment: N/A\n");
+        printf(
+            "Intent Alignment : N/A\n"
+        );
     } else {
-        printf("Intent Alignment: %.2f%%\n",
-               session->alignment_percentage);
+        printf(
+            "Intent Alignment : %.2f%%\n",
+            session->alignment_percentage
+        );
     }
 
-    printf("===================================\n");
+    printf(
+        "====================================\n"
+    );
 }
 
 static void display_main_menu(void)
 {
-    printf("\n========================================\n");
-    printf("                 WHY NOW\n");
-    printf("      Digital Behaviour Awareness\n");
-    printf("========================================\n");
+    printf(
+        "\n========================================\n"
+    );
+
+    printf(
+        "                 WHY NOW\n"
+    );
+
+    printf(
+        "      Digital Behaviour Awareness\n"
+    );
+
+    printf(
+        "========================================\n"
+    );
+
     printf("1. Start New Session\n");
     printf("2. View Active Session\n");
     printf("3. Record Activity\n");
@@ -253,69 +659,106 @@ int main(void)
     int choice;
     int running = 1;
 
-    initialize_session(&current_session, next_session_id);
+    initialize_session(
+        &current_session,
+        next_session_id
+    );
 
     while (running) {
         display_main_menu();
-        choice = read_integer("Enter choice: ");
+
+        choice =
+            read_integer("Enter choice: ");
 
         switch (choice) {
             case 1:
                 if (!current_session.is_active) {
-                    create_new_session(&current_session,
-                                       next_session_id);
+                    create_new_session(
+                        &current_session,
+                        next_session_id
+                    );
 
-                    if (current_session.is_active) {
+                    if (
+                        current_session.is_active
+                    ) {
                         next_session_id++;
                     }
                 } else {
-                    printf("\nA session is already active.\n");
+                    printf(
+                        "\nA session is already active.\n"
+                    );
                 }
+
                 break;
 
             case 2:
-                display_active_session(&current_session);
+                display_active_session(
+                    &current_session
+                );
                 break;
 
             case 3:
-                printf("\nActivity recording will be added "
-                       "through the activity module.\n");
+                record_activity(
+                    &current_session
+                );
                 break;
 
             case 4:
-                finish_current_session(&current_session);
+                finish_current_session(
+                    &current_session
+                );
                 break;
 
             case 5:
-                printf("\nSession history module is not "
-                       "integrated yet.\n");
+                printf(
+                    "\nSession history module "
+                    "is not integrated yet.\n"
+                );
                 break;
 
             case 6:
-                printf("\nBehaviour insights module is not "
-                       "integrated yet.\n");
+                printf(
+                    "\nBehaviour insights module "
+                    "is not integrated yet.\n"
+                );
                 break;
 
             case 7:
-                printf("\nWhyNow records user-provided session "
-                       "information for digital behaviour "
-                       "awareness.\n");
-                printf("The current prototype stores no "
-                       "passwords, messages, or browser history.\n");
+                printf(
+                    "\nWhyNow records user-provided "
+                    "session information for digital "
+                    "behaviour awareness.\n"
+                );
+
+                printf(
+                    "The current prototype stores no "
+                    "passwords, messages, or "
+                    "browser history.\n"
+                );
+
                 break;
 
             case 0:
                 if (current_session.is_active) {
-                    printf("\nPlease end the active session "
-                           "before exiting.\n");
+                    printf(
+                        "\nPlease end the active "
+                        "session before exiting.\n"
+                    );
                 } else {
-                    printf("\nThank you for using WhyNow.\n");
+                    printf(
+                        "\nThank you for using WhyNow.\n"
+                    );
+
                     running = 0;
                 }
+
                 break;
 
             default:
-                printf("\nInvalid menu choice. Please select 0-7.\n");
+                printf(
+                    "\nInvalid menu choice. "
+                    "Please select 0-7.\n"
+                );
         }
     }
 
