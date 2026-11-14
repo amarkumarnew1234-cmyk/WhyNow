@@ -28,6 +28,11 @@ StorageStatus initialize_storage(
     const StorageConfig *config
 );
 
+StorageStatus save_session(
+    const StorageConfig *config,
+    const Session *session
+);
+
 const char *storage_status_to_string(
     StorageStatus status
 );

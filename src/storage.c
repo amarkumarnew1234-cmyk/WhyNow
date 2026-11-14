@@ -57,6 +57,45 @@ StorageStatus initialize_storage(
     return STORAGE_SUCCESS;
 }
 
+StorageStatus save_session(
+    const StorageConfig *config,
+    const Session *session
+)
+{
+    FILE *file;
+    size_t written;
+
+    if (config == NULL ||
+        config->file_path == NULL ||
+        session == NULL) {
+        return STORAGE_ERROR_INVALID_ARGUMENT;
+    }
+
+    file = fopen(config->file_path, "ab");
+
+    if (file == NULL) {
+        return STORAGE_ERROR_OPEN_FILE;
+    }
+
+    written = fwrite(
+        session,
+        sizeof(Session),
+        1,
+        file
+    );
+
+    if (written != 1) {
+        fclose(file);
+        return STORAGE_ERROR_WRITE;
+    }
+
+    if (fclose(file) != 0) {
+        return STORAGE_ERROR_WRITE;
+    }
+
+    return STORAGE_SUCCESS;
+}
+
 const char *storage_status_to_string(
     StorageStatus status
 )
