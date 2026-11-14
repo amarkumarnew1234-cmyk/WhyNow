@@ -96,6 +96,58 @@ StorageStatus save_session(
     return STORAGE_SUCCESS;
 }
 
+StorageStatus load_sessions(
+    const StorageConfig *config,
+    Session *sessions,
+    size_t capacity,
+    size_t *loaded_count
+)
+{
+    FILE *file;
+    size_t count;
+
+    if (config == NULL ||
+        config->file_path == NULL ||
+        sessions == NULL ||
+        loaded_count == NULL ||
+        capacity == 0) {
+        return STORAGE_ERROR_INVALID_ARGUMENT;
+    }
+
+    *loaded_count = 0;
+
+    file = fopen(config->file_path, "rb");
+
+    if (file == NULL) {
+        return STORAGE_ERROR_OPEN_FILE;
+    }
+
+    count = fread(
+        sessions,
+        sizeof(Session),
+        capacity,
+        file
+    );
+
+    if (ferror(file)) {
+        fclose(file);
+        return STORAGE_ERROR_READ;
+    }
+
+    if (!feof(file)) {
+        fclose(file);
+        return STORAGE_ERROR_CAPACITY;
+    }
+
+    if (fclose(file) != 0) {
+        return STORAGE_ERROR_READ;
+    }
+
+    *loaded_count = count;
+
+    return STORAGE_SUCCESS;
+}
+
 const char *storage_status_to_string(
     StorageStatus status
 )

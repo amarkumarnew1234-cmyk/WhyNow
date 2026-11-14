@@ -33,6 +33,13 @@ StorageStatus save_session(
     const Session *session
 );
 
+StorageStatus load_sessions(
+    const StorageConfig *config,
+    Session *sessions,
+    size_t capacity,
+    size_t *loaded_count
+);
+
 const char *storage_status_to_string(
     StorageStatus status
 );
