@@ -1,0 +1,86 @@
+#include <stdio.h>
+
+#include "storage.h"
+
+void initialize_storage_config(StorageConfig *config)
+{
+    if (config == NULL) {
+        return;
+    }
+
+    config->file_path = DEFAULT_SESSION_DATA_FILE;
+}
+
+int storage_file_exists(const StorageConfig *config)
+{
+    FILE *file;
+
+    if (config == NULL || config->file_path == NULL) {
+        return 0;
+    }
+
+    file = fopen(config->file_path, "rb");
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    fclose(file);
+
+    return 1;
+}
+
+StorageStatus initialize_storage(
+    const StorageConfig *config
+)
+{
+    FILE *file;
+
+    if (config == NULL || config->file_path == NULL) {
+        return STORAGE_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (storage_file_exists(config)) {
+        return STORAGE_SUCCESS;
+    }
+
+    file = fopen(config->file_path, "wb");
+
+    if (file == NULL) {
+        return STORAGE_ERROR_OPEN_FILE;
+    }
+
+    if (fclose(file) != 0) {
+        return STORAGE_ERROR_WRITE;
+    }
+
+    return STORAGE_SUCCESS;
+}
+
+const char *storage_status_to_string(
+    StorageStatus status
+)
+{
+    switch (status) {
+        case STORAGE_SUCCESS:
+            return "Success";
+
+        case STORAGE_ERROR_INVALID_ARGUMENT:
+            return "Invalid argument";
+
+        case STORAGE_ERROR_OPEN_FILE:
+            return "Unable to open storage file";
+
+        case STORAGE_ERROR_WRITE:
+            return "Storage write error";
+
+        case STORAGE_ERROR_READ:
+            return "Storage read error";
+
+        case STORAGE_ERROR_CAPACITY:
+            return "Storage capacity reached";
+
+        default:
+            return "Unknown storage error";
+    }
+}
