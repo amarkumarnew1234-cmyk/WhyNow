@@ -3,6 +3,7 @@
 
 #include "session.h"
 #include "activity.h"
+#include "insights.h"
 
 static void clear_input_buffer(void)
 {
@@ -624,6 +625,107 @@ static void finish_current_session(
     );
 }
 
+static void display_behaviour_insights(
+    const Session *session
+)
+{
+    BehaviourInsights insights;
+
+    if (session == NULL) {
+        return;
+    }
+
+    if (session->activity_count == 0) {
+        printf(
+            "\nNo activity data is available "
+            "for behaviour insights.\n"
+        );
+        return;
+    }
+
+    if (!calculate_behaviour_insights(
+            session,
+            &insights
+        )) {
+        printf(
+            "\nUnable to calculate "
+            "behaviour insights.\n"
+        );
+        return;
+    }
+
+    printf(
+        "\n========== BEHAVIOUR INSIGHTS ==========\n"
+    );
+
+    printf(
+        "Total Activities        : %d\n",
+        insights.total_activities
+    );
+
+    printf(
+        "Aligned                 : %d (%.2f%%)\n",
+        insights.aligned_activities,
+        insights.aligned_percentage
+    );
+
+    printf(
+        "Contextual              : %d (%.2f%%)\n",
+        insights.contextual_activities,
+        insights.contextual_percentage
+    );
+
+    printf(
+        "Intent Changes          : %d (%.2f%%)\n",
+        insights.intent_changes,
+        insights.intent_change_percentage
+    );
+
+    printf(
+        "Drifts                  : %d (%.2f%%)\n",
+        insights.drift_activities,
+        insights.drift_percentage
+    );
+
+    printf(
+        "Dominant Behaviour      : %s\n",
+        dominant_behaviour_to_string(
+            &insights
+        )
+    );
+
+    if (insights.drift_activities > 0) {
+        printf(
+            "Most Common Drift Reason: %s\n",
+            distraction_reason_to_string(
+                insights.most_common_distraction_reason
+            )
+        );
+    } else {
+        printf(
+            "Most Common Drift Reason: None\n"
+        );
+    }
+
+    if (session->original_intent ==
+        INTENT_NO_PURPOSE) {
+        printf(
+            "Intent Alignment       : N/A\n"
+        );
+    } else {
+        printf(
+            "Intent Alignment       : %.2f%%\n",
+            calculate_alignment_percentage(
+                session
+            )
+        );
+    }
+
+    printf(
+        "========================================\n"
+    );
+}
+
 static void display_main_menu(void)
 {
     printf(
@@ -717,9 +819,8 @@ int main(void)
                 break;
 
             case 6:
-                printf(
-                    "\nBehaviour insights module "
-                    "is not integrated yet.\n"
+                display_behaviour_insights(
+                    &current_session
                 );
                 break;
 
