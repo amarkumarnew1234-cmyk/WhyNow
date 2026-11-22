@@ -7,6 +7,7 @@ ACTIVITY_EXECUTABLE="/tmp/whynow_test_activity"
 INTEGRATION_EXECUTABLE="/tmp/whynow_test_integration"
 INSIGHTS_EXECUTABLE="/tmp/whynow_test_insights"
 STORAGE_EXECUTABLE="/tmp/whynow_test_storage"
+REPORT_EXECUTABLE="/tmp/whynow_test_report"
 
 cleanup()
 {
@@ -16,6 +17,7 @@ cleanup()
         "$INTEGRATION_EXECUTABLE" \
         "$INSIGHTS_EXECUTABLE" \
         "$STORAGE_EXECUTABLE" \
+        "$REPORT_EXECUTABLE" \
         "test_sessions_storage.dat"
 }
 
@@ -106,8 +108,23 @@ echo "[TEST] Running storage tests..."
 "$STORAGE_EXECUTABLE"
 
 echo
+echo "[BUILD] Compiling reporting tests..."
+
+gcc -Wall -Wextra -Wpedantic -Werror \
+    -Iinclude \
+    tests/test_report.c \
+    src/report.c \
+    src/session.c \
+    -o "$REPORT_EXECUTABLE"
+
+echo "[PASS] Reporting tests compiled."
+
+echo
+echo "[TEST] Running reporting tests..."
+"$REPORT_EXECUTABLE"
+
+echo
 echo "========================================"
 echo "        ALL TEST SUITES PASSED"
-echo "        Total assertions: 103"
+echo "        Total assertions: 131"
 echo "========================================"
-

@@ -28,6 +28,7 @@ jobs:
             src/activity.c \
             src/insights.c \
             src/storage.c \
+            src/report.c \
             -o whynow
 
       - name: Run automated test suites
