@@ -6,6 +6,9 @@ Write-Host "========================================"
 
 $SessionExecutable = "test_session.exe"
 $ActivityExecutable = "test_activity.exe"
+$IntegrationExecutable = "test_integration.exe"
+$InsightsExecutable = "test_insights.exe"
+$StorageExecutable = "test_storage.exe"
 
 try {
     Write-Host ""
@@ -25,7 +28,6 @@ try {
 
     Write-Host ""
     Write-Host "[TEST] Running session tests..."
-
     & ".\$SessionExecutable"
 
     if ($LASTEXITCODE -ne 0) {
@@ -50,7 +52,6 @@ try {
 
     Write-Host ""
     Write-Host "[TEST] Running activity tests..."
-
     & ".\$ActivityExecutable"
 
     if ($LASTEXITCODE -ne 0) {
@@ -58,9 +59,81 @@ try {
     }
 
     Write-Host ""
+    Write-Host "[BUILD] Compiling integration tests..."
+
+    gcc -Wall -Wextra -Wpedantic -Werror `
+        -Iinclude `
+        tests\test_integration.c `
+        src\session.c `
+        src\activity.c `
+        -o $IntegrationExecutable
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Integration test compilation failed."
+    }
+
+    Write-Host "[PASS] Integration tests compiled."
+
+    Write-Host ""
+    Write-Host "[TEST] Running integration tests..."
+    & ".\$IntegrationExecutable"
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Integration tests failed."
+    }
+
+    Write-Host ""
+    Write-Host "[BUILD] Compiling behaviour insights tests..."
+
+    gcc -Wall -Wextra -Wpedantic -Werror `
+        -Iinclude `
+        tests\test_insights.c `
+        src\insights.c `
+        src\session.c `
+        -o $InsightsExecutable
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Behaviour insights test compilation failed."
+    }
+
+    Write-Host "[PASS] Behaviour insights tests compiled."
+
+    Write-Host ""
+    Write-Host "[TEST] Running behaviour insights tests..."
+    & ".\$InsightsExecutable"
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Behaviour insights tests failed."
+    }
+
+    Write-Host ""
+    Write-Host "[BUILD] Compiling storage tests..."
+
+    gcc -Wall -Wextra -Wpedantic -Werror `
+        -Iinclude `
+        tests\test_storage.c `
+        src\storage.c `
+        src\session.c `
+        -o $StorageExecutable
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Storage test compilation failed."
+    }
+
+    Write-Host "[PASS] Storage tests compiled."
+
+    Write-Host ""
+    Write-Host "[TEST] Running storage tests..."
+    & ".\$StorageExecutable"
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Storage tests failed."
+    }
+
+    Write-Host ""
     Write-Host "========================================"
     Write-Host "        ALL TEST SUITES PASSED"
-    Write-Host "        Total assertions: 40"
+    Write-Host "        Total assertions: 103"
     Write-Host "========================================"
 
     exit 0
@@ -82,4 +155,21 @@ finally {
     if (Test-Path $ActivityExecutable) {
         Remove-Item $ActivityExecutable
     }
+
+    if (Test-Path $IntegrationExecutable) {
+        Remove-Item $IntegrationExecutable
+    }
+
+    if (Test-Path $InsightsExecutable) {
+        Remove-Item $InsightsExecutable
+    }
+
+    if (Test-Path $StorageExecutable) {
+        Remove-Item $StorageExecutable
+    }
+
+    if (Test-Path "test_sessions_storage.dat") {
+        Remove-Item "test_sessions_storage.dat"
+    }
 }
+
