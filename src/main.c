@@ -4,6 +4,7 @@
 #include "session.h"
 #include "activity.h"
 #include "insights.h"
+#include "storage.h"
 
 static void clear_input_buffer(void)
 {
@@ -532,7 +533,8 @@ static void record_activity(Session *session)
 }
 
 static void finish_current_session(
-    Session *session
+    Session *session,
+    const StorageConfig *storage_config
 )
 {
     if (!session->is_active) {
@@ -622,6 +624,139 @@ static void finish_current_session(
 
     printf(
         "====================================\n"
+    );
+
+    if (storage_config != NULL) {
+        StorageStatus storage_status;
+
+        storage_status = save_session(
+            storage_config,
+            session
+        );
+
+        if (storage_status == STORAGE_SUCCESS) {
+            printf(
+                "Session saved to persistent history.\n"
+            );
+        } else {
+            printf(
+                "Warning: session could not be saved: %s\n",
+                storage_status_to_string(
+                    storage_status
+                )
+            );
+        }
+    }
+
+}
+
+static void display_session_history(
+    const StorageConfig *storage_config
+)
+{
+    Session sessions[20];
+    size_t loaded_count = 0;
+    size_t index;
+    StorageStatus status;
+
+    if (storage_config == NULL) {
+        return;
+    }
+
+    status = load_sessions(
+        storage_config,
+        sessions,
+        20,
+        &loaded_count
+    );
+
+    if (status != STORAGE_SUCCESS) {
+        printf(
+            "\nUnable to load session history: %s\n",
+            storage_status_to_string(status)
+        );
+        return;
+    }
+
+    if (loaded_count == 0) {
+        printf(
+            "\nNo saved session history is available.\n"
+        );
+        return;
+    }
+
+    printf(
+        "\n========== SESSION HISTORY ==========\n"
+    );
+
+    for (index = 0; index < loaded_count; index++) {
+        const Session *session = &sessions[index];
+
+        printf(
+            "\nSession %lu\n",
+            (unsigned long)(index + 1)
+        );
+
+        printf(
+            "Session ID       : %d\n",
+            session->session_id
+        );
+
+        printf(
+            "Intent           : %s\n",
+            intent_to_string(
+                session->original_intent
+            )
+        );
+
+        printf(
+            "Device           : %s\n",
+            device_to_string(
+                session->device_type
+            )
+        );
+
+        if (session->original_intent ==
+            INTENT_NO_PURPOSE) {
+            printf(
+                "Goal             : N/A\n"
+            );
+        } else {
+            printf(
+                "Goal             : %s\n",
+                session->goal
+            );
+        }
+
+        printf(
+            "Activities       : %d\n",
+            session->activity_count
+        );
+
+        if (session->original_intent ==
+            INTENT_NO_PURPOSE) {
+            printf(
+                "Intent Alignment : N/A\n"
+            );
+        } else {
+            printf(
+                "Intent Alignment : %.2f%%\n",
+                session->alignment_percentage
+            );
+        }
+
+        printf(
+            "Duration         : %ld seconds\n",
+            session->actual_duration_seconds
+        );
+
+        printf(
+            "-------------------------------------\n"
+        );
+    }
+
+    printf(
+        "=====================================\n"
     );
 }
 
@@ -757,9 +892,46 @@ static void display_main_menu(void)
 int main(void)
 {
     Session current_session;
+    StorageConfig storage_config;
+    StorageStatus storage_status;
+    Session saved_sessions[20];
+    size_t saved_session_count = 0;
     int next_session_id = 1;
     int choice;
     int running = 1;
+
+    initialize_storage_config(
+        &storage_config
+    );
+
+    storage_status = initialize_storage(
+        &storage_config
+    );
+
+    if (storage_status != STORAGE_SUCCESS) {
+        printf(
+            "Unable to initialize persistent storage: %s\n",
+            storage_status_to_string(
+                storage_status
+            )
+        );
+        return 1;
+    }
+
+    storage_status = load_sessions(
+        &storage_config,
+        saved_sessions,
+        20,
+        &saved_session_count
+    );
+
+    if (storage_status == STORAGE_SUCCESS &&
+        saved_session_count > 0) {
+        next_session_id =
+            saved_sessions[
+                saved_session_count - 1
+            ].session_id + 1;
+    }
 
     initialize_session(
         &current_session,
@@ -807,14 +979,14 @@ int main(void)
 
             case 4:
                 finish_current_session(
-                    &current_session
+                    &current_session,
+                    &storage_config
                 );
                 break;
 
             case 5:
-                printf(
-                    "\nSession history module "
-                    "is not integrated yet.\n"
+                display_session_history(
+                    &storage_config
                 );
                 break;
 
