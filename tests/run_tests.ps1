@@ -9,6 +9,7 @@ $ActivityExecutable = "test_activity.exe"
 $IntegrationExecutable = "test_integration.exe"
 $InsightsExecutable = "test_insights.exe"
 $StorageExecutable = "test_storage.exe"
+$ReportExecutable = "test_report.exe"
 
 try {
     Write-Host ""
@@ -131,9 +132,33 @@ try {
     }
 
     Write-Host ""
+    Write-Host "[BUILD] Compiling reporting tests..."
+
+    gcc -Wall -Wextra -Wpedantic -Werror `
+        -Iinclude `
+        tests\test_report.c `
+        src\report.c `
+        src\session.c `
+        -o $ReportExecutable
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Reporting test compilation failed."
+    }
+
+    Write-Host "[PASS] Reporting tests compiled."
+
+    Write-Host ""
+    Write-Host "[TEST] Running reporting tests..."
+    & ".\$ReportExecutable"
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Reporting tests failed."
+    }
+
+    Write-Host ""
     Write-Host "========================================"
     Write-Host "        ALL TEST SUITES PASSED"
-    Write-Host "        Total assertions: 103"
+    Write-Host "        Total assertions: 131"
     Write-Host "========================================"
 
     exit 0
@@ -168,8 +193,11 @@ finally {
         Remove-Item $StorageExecutable
     }
 
+    if (Test-Path $ReportExecutable) {
+        Remove-Item $ReportExecutable
+    }
+
     if (Test-Path "test_sessions_storage.dat") {
         Remove-Item "test_sessions_storage.dat"
     }
 }
-

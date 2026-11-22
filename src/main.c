@@ -5,6 +5,7 @@
 #include "activity.h"
 #include "insights.h"
 #include "storage.h"
+#include "report.h"
 
 static void clear_input_buffer(void)
 {
@@ -861,6 +862,166 @@ static void display_behaviour_insights(
     );
 }
 
+static void display_historical_report(
+    const StorageConfig *storage_config
+)
+{
+    Session sessions[20];
+    size_t loaded_count = 0;
+    StorageStatus storage_status;
+    HistoricalReport report;
+
+    if (storage_config == NULL) {
+        return;
+    }
+
+    storage_status = load_sessions(
+        storage_config,
+        sessions,
+        20,
+        &loaded_count
+    );
+
+    if (storage_status != STORAGE_SUCCESS) {
+        printf(
+            "\nUnable to load historical report: %s\n",
+            storage_status_to_string(
+                storage_status
+            )
+        );
+        return;
+    }
+
+    if (loaded_count == 0) {
+        printf(
+            "\nNo saved sessions are available "
+            "for historical reporting.\n"
+        );
+        return;
+    }
+
+    if (!generate_historical_report(
+            sessions,
+            loaded_count,
+            &report
+        )) {
+        printf(
+            "\nUnable to generate historical report.\n"
+        );
+        return;
+    }
+
+    printf(
+        "\n========================================\n"
+        "       HISTORICAL BEHAVIOUR REPORT\n"
+        "========================================\n"
+    );
+
+    printf(
+        "Total Sessions          : %lu\n",
+        (unsigned long)report.total_sessions
+    );
+
+    printf(
+        "Total Activities        : %d\n",
+        report.total_activities
+    );
+
+    printf(
+        "Total Tracked Time      : %ld seconds\n",
+        report.total_duration_seconds
+    );
+
+    printf(
+        "Average Session Duration: %.2f seconds\n",
+        report.average_duration_seconds
+    );
+
+    printf(
+        "Aligned Activities      : %d\n",
+        report.total_aligned
+    );
+
+    printf(
+        "Contextual Activities   : %d\n",
+        report.total_contextual
+    );
+
+    printf(
+        "Intent Changes          : %d\n",
+        report.total_intent_changes
+    );
+
+    printf(
+        "Drift Activities        : %d\n",
+        report.total_drifts
+    );
+
+    printf(
+        "Average Alignment       : %.2f%%\n",
+        report.average_alignment_percentage
+    );
+
+    printf(
+        "Highest Alignment       : %.2f%%\n",
+        report.highest_alignment_percentage
+    );
+
+    printf(
+        "Lowest Alignment        : %.2f%%\n",
+        report.lowest_alignment_percentage
+    );
+
+    printf(
+        "Sessions With Goals     : %d\n",
+        report.sessions_with_goals
+    );
+
+    printf(
+        "Completed Goals         : %d\n",
+        report.completed_goals
+    );
+
+    printf(
+        "Goal Completion Rate    : %.2f%%\n",
+        calculate_goal_completion_percentage(
+            &report
+        )
+    );
+
+    printf(
+        "Most Common Intent      : %s\n",
+        intent_to_string(
+            report.most_common_intent
+        )
+    );
+
+    if (report.most_common_distraction_reason ==
+        REASON_NONE) {
+        printf(
+            "Most Common Distraction : None\n"
+        );
+    } else {
+        printf(
+            "Most Common Distraction : %s\n",
+            distraction_reason_to_string(
+                report.most_common_distraction_reason
+            )
+        );
+    }
+
+    printf(
+        "Dominant Pattern        : %s\n",
+        report_dominant_pattern(
+            &report
+        )
+    );
+
+    printf(
+        "========================================\n"
+    );
+}
+
 static void display_main_menu(void)
 {
     printf(
@@ -885,7 +1046,8 @@ static void display_main_menu(void)
     printf("4. End Current Session\n");
     printf("5. View Session History\n");
     printf("6. View Behaviour Insights\n");
-    printf("7. About & Privacy\n");
+    printf("7. View Historical Report\n");
+    printf("8. About & Privacy\n");
     printf("0. Exit\n");
 }
 
@@ -997,6 +1159,12 @@ int main(void)
                 break;
 
             case 7:
+                display_historical_report(
+                    &storage_config
+                );
+                break;
+
+            case 8:
                 printf(
                     "\nWhyNow records user-provided "
                     "session information for digital "
@@ -1030,7 +1198,7 @@ int main(void)
             default:
                 printf(
                     "\nInvalid menu choice. "
-                    "Please select 0-7.\n"
+                    "Please select 0-8.\n"
                 );
         }
     }
