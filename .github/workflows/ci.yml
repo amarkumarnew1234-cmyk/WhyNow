@@ -1,0 +1,34 @@
+name: WhyNow CI
+
+on:
+  push:
+    branches:
+      - main
+      - "feature/**"
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compile WhyNow application
+        run: |
+          gcc -Wall -Wextra -Wpedantic -Werror \
+            -Iinclude \
+            src/main.c \
+            src/session.c \
+            src/activity.c \
+            -o whynow
+
+      - name: Run automated test suites
+        run: |
+          chmod +x tests/run_tests.sh
+          ./tests/run_tests.sh
